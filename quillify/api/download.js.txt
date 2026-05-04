@@ -1,0 +1,29 @@
+export default function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).end();
+  }
+
+  const { report } = req.body;
+
+  const text = `
+QUILLIFY REPORT
+
+Score: ${report.overall_score}
+
+Verdict:
+${report.verdict}
+
+Strengths:
+- ${report.strengths.join('\n- ')}
+
+Fixes:
+- ${report.fixes.join('\n- ')}
+
+Details:
+${report.detailed_feedback}
+`;
+
+  res.setHeader('Content-Disposition', 'attachment; filename=report.txt');
+  res.setHeader('Content-Type', 'text/plain');
+  res.send(text);
+}

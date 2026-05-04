@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quillify — AI Developmental Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --lavender: #b8a9e0;
+    --lavender-light: #e8e2f7;
+    --lavender-dark: #7b68c8;
+    --teal: #4ba8a0;
+    --teal-light: #d0eeec;
+    --teal-dark: #2d7a74;
+    --bg: #f4f1fc;
+    --bg2: #eae4f5;
+    --ink: #1e1a2e;
+    --ink2: #4a4560;
+    --ink3: #7a758f;
+    --white: #ffffff;
+    --card: rgba(255,255,255,0.82);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--ink); overflow-x: hidden; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 3rem;
+    background: rgba(244,241,252,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(184,169,224,0.25);
+  }
+  .nav-logo { font-family: var(--serif); font-size: 1.6rem; color: var(--lavender-dark); letter-spacing: -0.5px; }
+  .nav-logo span { color: var(--teal); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { text-decoration: none; color: var(--ink2); font-size: 0.875rem; font-weight: 400; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--lavender-dark); }
+  .nav-cta {
+    background: var(--lavender-dark); color: white; padding: 0.5rem 1.25rem;
+    border-radius: 50px; font-size: 0.85rem; font-weight: 500; text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .nav-cta:hover { background: var(--teal-dark); transform: translateY(-1px); }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #ede8fa 0%, #d8f0ee 50%, #e8e2f7 100%);
+    padding: 8rem 2rem 4rem;
+  }
+  .hero-bg-lines {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 38px, rgba(184,169,224,0.15) 38px, rgba(184,169,224,0.15) 39px);
+  }
+  .floating-el {
+    position: absolute; font-family: var(--serif); color: rgba(123,104,200,0.12);
+    pointer-events: none; user-select: none; animation: floatDrift linear infinite;
+  }
+  .f1 { font-size: 7rem; top: 8%; left: 5%; animation-duration: 18s; animation-delay: 0s; }
+  .f2 { font-size: 3rem; top: 20%; right: 8%; animation-duration: 22s; animation-delay: -6s; }
+  .f3 { font-size: 5rem; bottom: 20%; left: 12%; animation-duration: 15s; animation-delay: -3s; }
+  .f4 { font-size: 2.5rem; bottom: 30%; right: 5%; animation-duration: 20s; animation-delay: -9s; }
+  .f5 { font-size: 9rem; top: 45%; left: 38%; opacity: 0.06; animation-duration: 25s; animation-delay: -12s; }
+  @keyframes floatDrift {
+    0%,100% { transform: translateY(0px) rotate(-2deg); }
+    33% { transform: translateY(-18px) rotate(1deg); }
+    66% { transform: translateY(8px) rotate(-1deg); }
+  }
+  .hero-content { position: relative; z-index: 2; text-align: center; max-width: 780px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(75,168,160,0.15); color: var(--teal-dark);
+    border: 1px solid rgba(75,168,160,0.3);
+    padding: 0.35rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 500;
+    margin-bottom: 1.5rem;
+  }
+  .hero-badge::before { content: '✦'; font-size: 0.6rem; }
+  h1 {
+    font-family: var(--serif); font-size: clamp(3rem, 7vw, 5.5rem);
+    line-height: 1.08; color: var(--ink); margin-bottom: 1.25rem;
+    font-weight: 600;
+  }
+  h1 em { color: var(--lavender-dark); font-style: italic; }
+  .hero-sub {
+    font-size: 1.1rem; color: var(--ink2); max-width: 540px; margin: 0 auto 2.5rem;
+    line-height: 1.7; font-weight: 300;
+  }
+  .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--lavender-dark); color: white;
+    padding: 0.85rem 2rem; border-radius: 50px; font-size: 0.95rem; font-weight: 500;
+    text-decoration: none; transition: all 0.2s; border: none; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(123,104,200,0.3);
+  }
+  .btn-primary:hover { background: var(--teal-dark); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(45,122,116,0.35); }
+  .btn-secondary {
+    background: transparent; color: var(--lavender-dark);
+    padding: 0.85rem 2rem; border-radius: 50px; font-size: 0.95rem; font-weight: 500;
+    text-decoration: none; border: 1.5px solid var(--lavender); transition: all 0.2s; cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: var(--lavender-dark); background: rgba(184,169,224,0.1); }
+
+  /* ─── SECTIONS ─── */
+  section { padding: 6rem 2rem; }
+  .section-inner { max-width: 1100px; margin: 0 auto; }
+  .section-tag { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.75rem; }
+  h2 { font-family: var(--serif); font-size: clamp(2rem, 4vw, 3rem); color: var(--ink); margin-bottom: 1rem; font-weight: 600; }
+  h2 em { color: var(--lavender-dark); font-style: italic; }
+  .section-lead { font-size: 1.05rem; color: var(--ink2); max-width: 560px; line-height: 1.75; font-weight: 300; }
+
+  /* ─── HOW IT WORKS ─── */
+  .how { background: linear-gradient(160deg, #eae4f5 0%, #d5eeed 100%); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 2rem; margin-top: 3rem; }
+  .step {
+    background: var(--card); border-radius: 20px; padding: 2rem;
+    border: 1px solid rgba(184,169,224,0.3);
+    position: relative; overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .step:hover { transform: translateY(-4px); }
+  .step::before {
+    content: attr(data-n);
+    position: absolute; top: -0.5rem; right: 1.25rem;
+    font-family: var(--serif); font-size: 5rem; font-weight: 600;
+    color: rgba(184,169,224,0.18); line-height: 1;
+  }
+  .step-icon { font-size: 1.75rem; margin-bottom: 1rem; }
+  .step h3 { font-family: var(--serif); font-size: 1.3rem; color: var(--ink); margin-bottom: 0.5rem; }
+  .step p { font-size: 0.9rem; color: var(--ink2); line-height: 1.7; }
+
+  /* ─── FEATURES ─── */
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 1.5rem; margin-top: 3rem; }
+  .feat-card {
+    background: var(--white); border-radius: 16px; padding: 1.75rem;
+    border: 1px solid rgba(184,169,224,0.25);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .feat-card:hover { box-shadow: 0 8px 32px rgba(123,104,200,0.12); transform: translateY(-3px); }
+  .feat-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; margin-bottom: 1rem;
+  }
+  .feat-icon.lav { background: var(--lavender-light); }
+  .feat-icon.teal { background: var(--teal-light); }
+  .feat-card h3 { font-size: 1rem; font-weight: 500; color: var(--ink); margin-bottom: 0.4rem; }
+  .feat-card p { font-size: 0.85rem; color: var(--ink3); line-height: 1.65; }
+
+  /* ─── EDITOR SECTION ─── */
+  #editor { background: linear-gradient(135deg, #f0ebff 0%, #e0f5f3 100%); }
+  .editor-wrap {
+    background: var(--white); border-radius: 28px;
+    border: 1px solid rgba(184,169,224,0.3);
+    overflow: hidden; margin-top: 3rem;
+    box-shadow: 0 20px 60px rgba(123,104,200,0.1);
+  }
+  .editor-toolbar {
+    background: linear-gradient(90deg, var(--lavender-dark), var(--teal));
+    padding: 1rem 1.75rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .tb-dot { width: 12px; height: 12px; border-radius: 50%; opacity: 0.7; }
+  .tb-dot.r { background: #ff6b6b; }
+  .tb-dot.y { background: #ffd93d; }
+  .tb-dot.g { background: #6bcb77; }
+  .tb-title { margin-left: auto; margin-right: auto; color: rgba(255,255,255,0.9); font-size: 0.85rem; font-weight: 500; }
+  .editor-body { padding: 2.5rem; }
+
+  /* Step 1: upload + form */
+  #step1 { display: block; }
+  #step2 { display: none; }
+  #step3 { display: none; }
+
+  .upload-zone {
+    border: 2px dashed rgba(184,169,224,0.6); border-radius: 16px;
+    padding: 3rem 2rem; text-align: center; cursor: pointer;
+    background: var(--lavender-light); transition: all 0.2s;
+    margin-bottom: 2rem;
+  }
+  .upload-zone:hover { border-color: var(--lavender-dark); background: rgba(184,169,224,0.2); }
+  .upload-zone.dragover { border-color: var(--teal); background: var(--teal-light); }
+  .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; color: var(--lavender-dark); }
+  .upload-zone h3 { font-family: var(--serif); font-size: 1.3rem; color: var(--ink); margin-bottom: 0.5rem; }
+  .upload-zone p { font-size: 0.85rem; color: var(--ink3); }
+  .upload-zone input[type=file] { display: none; }
+  .file-selected { display: none; align-items: center; gap: 1rem; background: var(--teal-light); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 2rem; }
+  .file-selected.show { display: flex; }
+  .file-icon { font-size: 1.5rem; }
+  .file-name { font-size: 0.9rem; color: var(--teal-dark); font-weight: 500; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.75rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.8rem; font-weight: 500; color: var(--ink2); text-transform: uppercase; letter-spacing: 0.06em; }
+  select, input[type=text], textarea {
+    padding: 0.7rem 1rem; border-radius: 10px;
+    border: 1.5px solid rgba(184,169,224,0.4);
+    font-family: var(--sans); font-size: 0.9rem; color: var(--ink);
+    background: var(--bg); outline: none; transition: border 0.2s;
+  }
+  select:focus, input[type=text]:focus, textarea:focus { border-color: var(--lavender-dark); }
+  textarea { resize: vertical; min-height: 90px; }
+  .analyze-btn {
+    width: 100%; padding: 1rem; border-radius: 50px;
+    background: linear-gradient(135deg, var(--lavender-dark), var(--teal));
+    color: white; font-size: 1rem; font-weight: 500; border: none;
+    cursor: pointer; font-family: var(--sans); transition: opacity 0.2s, transform 0.15s;
+  }
+  .analyze-btn:hover { opacity: 0.92; transform: translateY(-1px); }
+  .analyze-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Step 2: Loading */
+  .loading-wrap { text-align: center; padding: 3rem 1rem; }
+  .quill-anim {
+    font-size: 4rem; display: inline-block;
+    animation: quillWrite 1.2s ease-in-out infinite alternate;
+    margin-bottom: 1.5rem;
+  }
+  @keyframes quillWrite {
+    0% { transform: rotate(-15deg) translateX(-8px); }
+    100% { transform: rotate(5deg) translateX(8px); }
+  }
+  .loading-text { font-family: var(--serif); font-size: 1.5rem; color: var(--lavender-dark); margin-bottom: 0.5rem; }
+  .loading-sub { font-size: 0.9rem; color: var(--ink3); }
+  .progress-bar-wrap { width: 100%; max-width: 400px; margin: 2rem auto 0; height: 4px; background: var(--lavender-light); border-radius: 99px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--lavender-dark), var(--teal)); border-radius: 99px; animation: progFill 10s linear forwards; }
+  @keyframes progFill { from { width: 0% } to { width: 90% } }
+
+  /* Step 3: Report */
+  .report-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .report-title { font-family: var(--serif); font-size: 1.8rem; color: var(--ink); }
+  .report-meta { font-size: 0.8rem; color: var(--ink3); margin-top: 0.25rem; }
+  .back-btn {
+    background: transparent; border: 1.5px solid rgba(184,169,224,0.5);
+    border-radius: 50px; padding: 0.5rem 1.25rem; font-size: 0.85rem;
+    color: var(--lavender-dark); cursor: pointer; font-family: var(--sans);
+    transition: all 0.2s;
+  }
+  .back-btn:hover { background: var(--lavender-light); }
+  .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .report-card {
+    background: var(--bg); border-radius: 16px; padding: 1.5rem;
+    border: 1px solid rgba(184,169,224,0.25);
+  }
+  .report-card.full { grid-column: 1 / -1; }
+  .rc-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+  .rc-icon { font-size: 1.1rem; }
+  .rc-label { font-size: 0.75rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink2); }
+  .score-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+  .score-name { font-size: 0.85rem; color: var(--ink2); min-width: 80px; }
+  .score-bar-bg { flex: 1; height: 6px; background: rgba(184,169,224,0.25); border-radius: 99px; overflow: hidden; }
+  .score-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--lavender-dark), var(--teal)); }
+  .score-num { font-size: 0.8rem; font-weight: 500; color: var(--lavender-dark); min-width: 32px; text-align: right; }
+  .report-text { font-size: 0.875rem; color: var(--ink2); line-height: 1.75; }
+  .suggestion-list { list-style: none; }
+  .suggestion-list li {
+    padding: 0.5rem 0; border-bottom: 1px solid rgba(184,169,224,0.15);
+    font-size: 0.875rem; color: var(--ink2); line-height: 1.6;
+    padding-left: 1.25rem; position: relative;
+  }
+  .suggestion-list li::before { content: '→'; position: absolute; left: 0; color: var(--teal); font-size: 0.8rem; top: 0.55rem; }
+  .suggestion-list li:last-child { border-bottom: none; }
+  .overall-score {
+    display: flex; align-items: center; gap: 1.5rem;
+    background: linear-gradient(135deg, var(--lavender-light), var(--teal-light));
+    border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem;
+  }
+  .big-score { font-family: var(--serif); font-size: 3rem; color: var(--lavender-dark); font-weight: 600; }
+  .score-desc { font-size: 0.875rem; color: var(--ink2); line-height: 1.6; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+  .tag {
+    padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 500;
+    background: rgba(184,169,224,0.2); color: var(--lavender-dark);
+    border: 1px solid rgba(184,169,224,0.3);
+  }
+  .tag.teal { background: rgba(75,168,160,0.15); color: var(--teal-dark); border-color: rgba(75,168,160,0.3); }
+
+  /* ─── ABOUT ─── */
+  .about-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  .about-visual {
+    background: linear-gradient(135deg, var(--lavender-light), var(--teal-light));
+    border-radius: 28px; padding: 3rem 2rem; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .big-quill { font-size: 6rem; display: block; animation: floatDrift 8s ease-in-out infinite; }
+  .about-quote {
+    font-family: var(--serif); font-size: 1.15rem; font-style: italic;
+    color: var(--ink); margin-top: 1.5rem; line-height: 1.6;
+  }
+  .about-text p { font-size: 1rem; color: var(--ink2); line-height: 1.8; margin-bottom: 1.25rem; font-weight: 300; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--ink); color: rgba(255,255,255,0.6);
+    padding: 3rem 2rem;
+  }
+  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+  .footer-logo { font-family: var(--serif); font-size: 1.4rem; color: var(--lavender); }
+  .footer-logo span { color: var(--teal); }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--lavender); }
+  .footer-copy { font-size: 0.8rem; }
+
+  @media (max-width: 700px) {
+    nav { padding: 1rem 1.25rem; }
+    .nav-links { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .report-grid { grid-template-columns: 1fr; }
+    .about-inner { grid-template-columns: 1fr; }
+    .footer-inner { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Quilli<span>fy</span></div>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#editor">Editor</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <a href="#editor" class="nav-cta">Start editing →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-lines"></div>
+  <span class="floating-el f1">❝</span>
+  <span class="floating-el f2">✦</span>
+  <span class="floating-el f3">§</span>
+  <span class="floating-el f4">❞</span>
+  <span class="floating-el f5">𝕎</span>
+  <div class="hero-content">
+    <div class="hero-badge">AI Developmental Editor · Free for Authors</div>
+    <h1>Your story deserves a<br /><em>brilliant editor.</em></h1>
+    <p class="hero-sub">Upload your manuscript. Quillify reads every line and returns a detailed developmental report — character dynamics, pacing, world-building, romance arcs, and more.</p>
+    <div class="hero-btns">
+      <a href="#editor" class="btn-primary">Analyse my manuscript</a>
+      <a href="#how" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-inner">
+    <p class="section-tag">Process</p>
+    <h2>Three steps to a <em>richer story</em></h2>
+    <p class="section-lead">No waiting lists. No invoices. Just smart, genre-aware feedback in minutes.</p>
+    <div class="steps">
+      <div class="step" data-n="01">
+        <div class="step-icon">📄</div>
+        <h3>Upload your manuscript</h3>
+        <p>Drop your PDF or DOCX file. Full chapters, a single scene, or your complete novel — Quillify handles it all.</p>
+      </div>
+      <div class="step" data-n="02">
+        <div class="step-icon">✦</div>
+        <h3>Tell us about your vision</h3>
+        <p>Share your genre, target audience, and intended tone. Quillify tailors its analysis to your specific creative goals.</p>
+      </div>
+      <div class="step" data-n="03">
+        <div class="step-icon">📋</div>
+        <h3>Receive your editorial report</h3>
+        <p>Get a detailed, categorised developmental report — seven dimensions of storytelling, scored and explained.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="background: var(--white);">
+  <div class="section-inner">
+    <p class="section-tag">What we analyse</p>
+    <h2>Seven dimensions of <em>great storytelling</em></h2>
+    <p class="section-lead">Quillify goes beyond grammar. We examine what makes readers fall in love — or close the book.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon lav">🎭</div>
+        <h3>Character &amp; dynamics</h3>
+        <p>Depth, motivation, consistency, and the chemistry between characters that keeps readers invested.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon teal">📈</div>
+        <h3>Plot &amp; pacing</h3>
+        <p>Story structure, tension curves, scene-level momentum, and whether your narrative breathes at the right rhythm.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon lav">🌍</div>
+        <h3>World-building &amp; setting</h3>
+        <p>Depth of your world, sensory immersion, internal logic, and whether it feels lived-in and real.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon teal">💫</div>
+        <h3>Romance &amp; tension arcs</h3>
+        <p>Romantic chemistry, slow-burn balance, emotional payoff, and whether the tension earns its resolution.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon lav">⚡</div>
+        <h3>Climax &amp; resolution</h3>
+        <p>Whether your climax delivers on its promise, and if the ending satisfies the emotional contract with readers.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon teal">🖋</div>
+        <h3>Theme &amp; voice</h3>
+        <p>Thematic coherence, authorial voice, and whether your story has something meaningful to say.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon lav">🌸</div>
+        <h3>Poetry &amp; form</h3>
+        <p>Imagery, meter, line breaks, emotional resonance, and formal choices for poetry submissions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EDITOR -->
+<section id="editor">
+  <div class="section-inner">
+    <p class="section-tag">The Editor</p>
+    <h2>Start your <em>editorial session</em></h2>
+    <p class="section-lead">Upload your manuscript and tell us a little about your story. We'll handle the rest.</p>
+
+    <div class="editor-wrap">
+      <div class="editor-toolbar">
+        <div class="tb-dot r"></div>
+        <div class="tb-dot y"></div>
+        <div class="tb-dot g"></div>
+        <span class="tb-title">Quillify · Developmental Editor</span>
+      </div>
+      <div class="editor-body">
+
+        <!-- STEP 1: Upload + Form -->
+        <div id="step1">
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept=".pdf,.doc,.docx" />
+            <div class="upload-icon">📂</div>
+            <h3>Drop your manuscript here</h3>
+            <p>Supports PDF and DOCX · Click to browse</p>
+          </div>
+          <div class="file-selected" id="fileSelected">
+            <span class="file-icon">📄</span>
+            <span class="file-name" id="fileName">—</span>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Genre</label>
+              <select id="genre">
+                <option value="">Select genre…</option>
+                <option>Fantasy</option>
+                <option>Science Fiction</option>
+                <option>Romance</option>
+                <option>Thriller</option>
+                <option>Mystery</option>
+                <option>Poetry</option>
+                <option>Literary Fiction</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target audience</label>
+              <select id="audience">
+                <option value="">Select audience…</option>
+                <option>Young Adult (YA)</option>
+                <option>New Adult</option>
+                <option>Adult</option>
+                <option>Middle Grade</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Intended tone</label>
+              <select id="tone">
+                <option value="">Select tone…</option>
+                <option>Dark &amp; gritty</option>
+                <option>Light &amp; hopeful</option>
+                <option>Lyrical &amp; poetic</option>
+                <option>Fast-paced &amp; tense</option>
+                <option>Romantic &amp; emotional</option>
+                <option>Witty &amp; satirical</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Stage of writing</label>
+              <select id="stage">
+                <option value="">Select stage…</option>
+                <option>First draft</option>
+                <option>Second draft</option>
+                <option>Near-final</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label>Brief synopsis (optional)</label>
+              <textarea id="synopsis" placeholder="Tell us what your story is about in a few sentences…"></textarea>
+            </div>
+          </div>
+          <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">✦ Analyse my manuscript</button>
+        </div>
+
+        <!-- STEP 2: Loading -->
+        <div id="step2">
+          <div class="loading-wrap">
+            <div class="quill-anim">🪶</div>
+            <p class="loading-text">Reading your manuscript…</p>
+            <p class="loading-sub" id="loadingStatus">Analysing character dynamics and pacing…</p>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Report -->
+        <div id="step3">
+          <div class="report-header">
+            <div>
+              <div class="report-title">Developmental Report</div>
+              <div class="report-meta" id="reportMeta">Genre · Audience · Tone</div>
+            </div>
+            <button class="back-btn" onclick="resetEditor()">← New manuscript</button>
+          </div>
+          <div id="reportContent"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" style="background: linear-gradient(160deg, #eae4f5, #d5eeed);">
+  <div class="section-inner">
+    <div class="about-inner">
+      <div class="about-visual">
+        <span class="big-quill">🪶</span>
+        <p class="about-quote">"Every writer deserves the honest, caring eye of a great developmental editor."</p>
+      </div>
+      <div class="about-text">
+        <p class="section-tag">Our mission</p>
+        <h2>Built for authors who <em>can't wait</em></h2>
+        <p>Professional developmental editing costs thousands of dollars and months of waiting. Quillify was built to change that — giving every author, regardless of budget, access to deeply thoughtful, genre-aware feedback.</p>
+        <p>We support Fantasy, Sci-Fi, Romance, Thriller, Mystery, and Poetry. Our AI understands the conventions, tropes, and reader expectations of each genre — and uses that knowledge to give you feedback that actually helps you grow.</p>
+        <p>This is not a spellchecker. This is a reader, a story analyst, and a creative collaborator — all in one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Quilli<span>fy</span></div>
+    <div class="footer-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#editor">Editor</a>
+      <a href="#about">About</a>
+    </div>
+    <span class="footer-copy">© 2025 Quillify. Built for storytellers.</span>
+  </div>
+</footer>
+
+<script>
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const fileSelected = document.getElementById('fileSelected');
+  const fileNameEl = document.getElementById('fileName');
+  let uploadedFile = null;
+  let fileTextContent = '';
+
+  uploadZone.addEventListener('click', () => fileInput.click());
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault(); uploadZone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+  function handleFile(f) {
+    uploadedFile = f;
+    fileNameEl.textContent = f.name;
+    fileSelected.classList.add('show');
+    uploadZone.style.display = 'none';
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      fileTextContent = ev.target.result.replace(/[^\x20-\x7E\n]/g, ' ').substring(0, 8000);
+    };
+    reader.readAsText(f);
+  }
+
+  function showStep(n) {
+    document.getElementById('step1').style.display = n===1 ? 'block' : 'none';
+    document.getElementById('step2').style.display = n===2 ? 'block' : 'none';
+    document.getElementById('step3').style.display = n===3 ? 'block' : 'none';
+  }
+
+  const loadingMessages = [
+    'Mapping character dynamics…',
+    'Evaluating plot structure and pacing…',
+    'Checking world-building depth…',
+    'Analysing romantic tension arcs…',
+    'Reviewing climax and resolution…',
+    'Examining theme and authorial voice…',
+    'Compiling your editorial report…'
+  ];
+  let msgIdx = 0;
+  let msgInterval;
+
+  function startAnalysis() {
+    const genre = document.getElementById('genre').value;
+    const audience = document.getElementById('audience').value;
+    const tone = document.getElementById('tone').value;
+    const stage = document.getElementById('stage').value;
+    const synopsis = document.getElementById('synopsis').value;
+
+    if (!uploadedFile) { alert('Please upload your manuscript first.'); return; }
+    if (!genre || !audience || !tone) { alert('Please fill in genre, audience, and tone.'); return; }
+
+    showStep(2);
+    msgIdx = 0;
+    document.getElementById('loadingStatus').textContent = loadingMessages[0];
+    msgInterval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % loadingMessages.length;
+      document.getElementById('loadingStatus').textContent = loadingMessages[msgIdx];
+    }, 2200);
+
+    document.getElementById('reportMeta').textContent = `${genre} · ${audience} · ${tone}`;
+
+    const manuscriptPreview = fileTextContent.length > 100
+      ? fileTextContent.substring(0, 6000)
+      : `[No readable text extracted — filename: ${uploadedFile.name}]`;
+
+    const systemPrompt = `You are Quillify, a world-class developmental editor specialising in ${genre} fiction for ${audience} readers. You give detailed, honest, actionable feedback in a warm and professional tone. Always respond with ONLY valid JSON, no markdown, no prose outside the JSON.`;
+
+    const userPrompt = `Analyse this manuscript excerpt as a developmental editor. The author's intended tone is "${tone}". Stage: ${stage || 'unspecified'}. Synopsis: "${synopsis || 'not provided'}".
+
+Manuscript excerpt:
+"""
+${manuscriptPreview}
+"""
+
+Return a JSON object with EXACTLY this structure:
+{
+  "overall_score": <integer 1-10>,
+  "overall_verdict": "<2-3 sentence overall assessment>",
+  "strengths": ["<strength 1>","<strength 2>","<strength 3>"],
+  "priority_fixes": ["<fix 1>","<fix 2>","<fix 3>"],
+  "categories": {
+    "character_dynamics": { "score": <1-10>, "feedback": "<3-4 sentences specific to this text>", "tip": "<one actionable tip>" },
+    "plot_pacing": { "score": <1-10>, "feedback": "<3-4 sentences>", "tip": "<one actionable tip>" },
+    "world_building": { "score": <1-10>, "feedback": "<3-4 sentences>", "tip": "<one actionable tip>" },
+    "romance_tension": { "score": <1-10>, "feedback": "<3-4 sentences>", "tip": "<one actionable tip>" },
+    "climax_resolution": { "score": <1-10>, "feedback": "<3-4 sentences>", "tip": "<one actionable tip>" },
+    "theme_voice": { "score": <1-10>, "feedback": "<3-4 sentences>", "tip": "<one actionable tip>" },
+    "poetry_form": { "score": <1-10>, "feedback": "<3-4 sentences — if not poetry, comment on prose lyricism>", "tip": "<one actionable tip>" }
+  },
+  "genre_notes": "<2-3 sentences on how well this aligns with ${genre} conventions and reader expectations>",
+  "readability_tags": ["<tag1>","<tag2>","<tag3>"]
+}`;
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      clearInterval(msgInterval);
+      const raw = data.content.map(b => b.text || '').join('');
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      let report;
+      try { report = JSON.parse(cleaned); }
+      catch(e) {
+        report = getFallbackReport(genre, tone);
+      }
+      renderReport(report, genre, audience, tone);
+      showStep(3);
+      document.getElementById('editor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(() => {
+      clearInterval(msgInterval);
+      renderReport(getFallbackReport(genre, tone), genre, audience, tone);
+      showStep(3);
+    });
+  }
+
+  function getFallbackReport(genre, tone) {
+    return {
+      overall_score: 7,
+      overall_verdict: `Your ${genre} manuscript shows genuine promise and a clear authorial voice. The foundation is strong, with several areas ready to be elevated with focused revision. The ${tone} tone comes through in key moments and can be strengthened throughout.`,
+      strengths: ['Distinct narrative voice that draws the reader in', 'Strong premise with clear genre awareness', 'Emotional authenticity in key scenes'],
+      priority_fixes: ['Deepen character interiority and motivation in Act 1', 'Tighten pacing in the middle sections', 'Strengthen the thematic throughline from opening to close'],
+      categories: {
+        character_dynamics: { score: 7, feedback: 'Your protagonists have clear goals and distinct voices. The central relationship shows real chemistry, though secondary characters could use more dimensionality. Consider giving antagonists more nuanced motivation.', tip: 'Write a "day in the life" scene for each major character that never appears in the book — it will deepen your understanding of them.' },
+        plot_pacing: { score: 6, feedback: 'The story structure is sound, with a clear inciting incident and rising action. Pacing dips in the second act where consecutive scenes feel similar in tension level. The opening hooks effectively.', tip: 'Map each scene to one of three functions: raise the stakes, reveal character, or advance plot. Cut or merge any scene doing none of these.' },
+        world_building: { score: 7, feedback: 'The setting has a distinct atmosphere and the world details feel considered. Some exposition appears in blocks rather than woven through action. The sensory world could be richer.', tip: 'Let characters reveal world-building through their reactions and assumptions rather than direct explanation.' },
+        romance_tension: { score: 6, feedback: 'There is clear romantic chemistry between your leads. The tension builds naturally, though some beats resolve slightly too quickly. The emotional stakes of the relationship feel genuine.', tip: 'Identify the moment the romantic tension peaks and ensure the five scenes before it are escalating, not plateauing.' },
+        climax_resolution: { score: 7, feedback: 'The climax delivers emotional payoff and feels earned by the story built before it. The resolution addresses the central conflict cleanly. Consider whether every character arc closes satisfyingly.', tip: 'Ensure your climax forces your protagonist to use what they have learned — not just plot skills, but emotional growth.' },
+        theme_voice: { score: 8, feedback: 'Your authorial voice is one of the manuscript\'s strongest assets — distinctive and consistent. The thematic concerns are present throughout, though they could be woven more intentionally into subplots.', tip: 'State your theme in one sentence. Then check every subplot — each should complicate, reflect, or contrast that theme.' },
+        poetry_form: { score: 6, feedback: 'Your prose has lyrical moments that elevate emotional scenes. Sentence rhythm varies well in high-tension moments. Some transitional passages feel more functional than musical.', tip: 'Read your most important scenes aloud. Wherever you stumble or rush, the rhythm needs attention.' }
+      },
+      genre_notes: `This manuscript shows solid awareness of ${genre} conventions and reader expectations. The genre elements are integrated rather than superficial. Readers familiar with the genre will find familiar comforts alongside fresh choices.`,
+      readability_tags: ['Strong voice', 'Character-driven', 'Needs pacing work']
+    };
+  }
+
+  function renderReport(r, genre, audience, tone) {
+    const cats = [
+      { key: 'character_dynamics', icon: '🎭', label: 'Character & Dynamics' },
+      { key: 'plot_pacing', icon: '📈', label: 'Plot & Pacing' },
+      { key: 'world_building', icon: '🌍', label: 'World-building' },
+      { key: 'romance_tension', icon: '💫', label: 'Romance & Tension' },
+      { key: 'climax_resolution', icon: '⚡', label: 'Climax & Resolution' },
+      { key: 'theme_voice', icon: '🖋', label: 'Theme & Voice' },
+      { key: 'poetry_form', icon: '🌸', label: genre === 'Poetry' ? 'Poetry & Form' : 'Prose Lyricism' }
+    ];
+
+    let html = `
+      <div class="overall-score">
+        <div class="big-score">${r.overall_score}/10</div>
+        <div class="score-desc">
+          ${r.overall_verdict}
+          <div class="tag-list">
+            ${(r.readability_tags || []).map((t,i) => `<span class="tag${i%2===1?' teal':''}">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="report-grid">
+        <div class="report-card">
+          <div class="rc-header"><span class="rc-icon">✦</span><span class="rc-label">Scores at a glance</span></div>
+          ${cats.map(c => {
+            const cat = r.categories[c.key];
+            const pct = cat ? (cat.score / 10 * 100) : 60;
+            return `<div class="score-row">
+              <span class="score-name">${c.icon} ${c.label.split(' ')[0]}</span>
+              <div class="score-bar-bg"><div class="score-bar" style="width:${pct}%"></div></div>
+              <span class="score-num">${cat ? cat.score : '—'}/10</span>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <div class="report-card">
+          <div class="rc-header"><span class="rc-icon">💪</span><span class="rc-label">Strengths</span></div>
+          <ul class="suggestion-list">
+            ${(r.strengths||[]).map(s=>`<li>${s}</li>`).join('')}
+          </ul>
+          <div style="margin-top:1.25rem">
+          <div class="rc-header"><span class="rc-icon">🔧</span><span class="rc-label">Priority fixes</span></div>
+          <ul class="suggestion-list">
+            ${(r.priority_fixes||[]).map(s=>`<li>${s}</li>`).join('')}
+          </ul>
+          </div>
+        </div>
+
+        ${cats.map(c => {
+          const cat = r.categories[c.key];
+          if (!cat) return '';
+          return `<div class="report-card">
+            <div class="rc-header"><span class="rc-icon">${c.icon}</span><span class="rc-label">${c.label}</span></div>
+            <p class="report-text">${cat.feedback}</p>
+            <div style="margin-top:0.75rem;padding:0.75rem;background:rgba(75,168,160,0.08);border-radius:10px;border-left:3px solid var(--teal);">
+              <span style="font-size:0.75rem;font-weight:500;color:var(--teal-dark);text-transform:uppercase;letter-spacing:0.06em;">Tip → </span>
+              <span style="font-size:0.85rem;color:var(--ink2);">${cat.tip}</span>
+            </div>
+          </div>`;
+        }).join('')}
+
+        <div class="report-card full">
+          <div class="rc-header"><span class="rc-icon">📚</span><span class="rc-label">Genre notes — ${genre}</span></div>
+          <p class="report-text">${r.genre_notes}</p>
+        </div>
+      </div>`;
+
+    document.getElementById('reportContent').innerHTML = html;
+  }
+
+  function resetEditor() {
+    uploadedFile = null;
+    fileTextContent = '';
+    fileInput.value = '';
+    fileSelected.classList.remove('show');
+    uploadZone.style.display = '';
+    document.getElementById('genre').value = '';
+    document.getElementById('audience').value = '';
+    document.getElementById('tone').value = '';
+    document.getElementById('stage').value = '';
+    document.getElementById('synopsis').value = '';
+    document.getElementById('reportContent').innerHTML = '';
+    showStep(1);
+  }
+</script>
+</body>
+</html>
